@@ -1,5 +1,6 @@
 package com.doldolseo.doldolseo_msa_crew_board.domain;
 
+import com.fasterxml.jackson.annotation.JsonInclude;
 import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -12,7 +13,8 @@ import javax.persistence.*;
 @Getter
 @Setter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
-public class CrewMemberWith {
+@JsonInclude(JsonInclude.Include.NON_NULL)
+public class MembersWith {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "CREW_MEMBERWITH_NO")
