@@ -9,7 +9,7 @@ import lombok.Setter;
 import javax.persistence.*;
 
 @Entity
-@Table(name = "CREW_BOARD_MEMBERWITH_TBL")
+@Table(name = "CREW_POST_MEMBERWITH_TBL")
 @Getter
 @Setter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)

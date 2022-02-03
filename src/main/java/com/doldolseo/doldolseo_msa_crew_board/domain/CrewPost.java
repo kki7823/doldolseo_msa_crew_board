@@ -11,7 +11,7 @@ import javax.persistence.*;
 import java.time.LocalDateTime;
 
 @Entity
-@Table(name = "CREW_BOARD_TBL")
+@Table(name = "CREW_POST_TBL")
 @Getter
 @Setter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
