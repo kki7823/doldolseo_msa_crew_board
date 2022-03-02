@@ -1,15 +1,15 @@
 package com.doldolseo.doldolseo_msa_crew_board.service;
 
-import com.doldolseo.doldolseo_msa_crew_board.domain.MembersWith;
+import com.doldolseo.doldolseo_msa_crew_board.domain.TaggedMember;
 import com.doldolseo.doldolseo_msa_crew_board.domain.CrewPost;
-import com.doldolseo.doldolseo_msa_crew_board.dto.CrewPostAndMembersWithDTO;
+import com.doldolseo.doldolseo_msa_crew_board.domain.TaggedMemberId;
+import com.doldolseo.doldolseo_msa_crew_board.dto.CrewPostAndMembersDTO;
 import com.doldolseo.doldolseo_msa_crew_board.dto.CrewPostDTO;
-import com.doldolseo.doldolseo_msa_crew_board.dto.MembersWithDTO;
+import com.doldolseo.doldolseo_msa_crew_board.dto.TaggedMemberDTO;
 import com.doldolseo.doldolseo_msa_crew_board.dto.CrewPostPageDTO;
-import com.doldolseo.doldolseo_msa_crew_board.repository.MembersWithRepository;
+import com.doldolseo.doldolseo_msa_crew_board.repository.TaggedMemberRepository;
 import com.doldolseo.doldolseo_msa_crew_board.repository.CrewPostRepository;
 import com.doldolseo.doldolseo_msa_crew_board.utils.PagingParam;
-import org.hibernate.mapping.Collection;
 import org.modelmapper.ModelMapper;
 import org.modelmapper.TypeToken;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -19,7 +19,6 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
-import java.util.Collections;
 import java.util.List;
 
 @Service
@@ -27,9 +26,20 @@ public class CrewPostServiceImpl implements CrewPostService {
     @Autowired
     CrewPostRepository crewPostRepository;
     @Autowired
-    MembersWithRepository membersWithRepository;
+    TaggedMemberRepository taggedMemberRepository;
     @Autowired
     ModelMapper modelMapper;
+
+    /* Crew Post */
+    @Override
+    public void saveCrewPost(CrewPostDTO dto, String taggedMembers) {
+        dto.setHit(0);
+        dto.setWDate(LocalDateTime.now());
+        CrewPost crewPost = crewPostRepository.save((CrewPost) dtoToEntity(dto));
+
+        if (taggedMembers.length() != 0)
+            addTaggedMembers(taggedMembers, crewPost);
+    }
 
     @Override
     public CrewPostPageDTO getCrewPostPage(CrewPostDTO dtoIn, Pageable pageable) {
@@ -46,7 +56,7 @@ public class CrewPostServiceImpl implements CrewPostService {
 
         PagingParam pagingParam = new PagingParam(5, crewPostPage);
 
-        crewPostPageDTO.setCrewPostList(crewPostPage.getContent());
+        crewPostPageDTO.setCrewPosts(crewPostPage.getContent());
         crewPostPageDTO.setEndBlockPage(pagingParam.getStartBlockPage());
         crewPostPageDTO.setEndBlockPage(pagingParam.getEndBlockPage());
         crewPostPageDTO.setTotalPages(pagingParam.getTotalPages());
@@ -67,21 +77,22 @@ public class CrewPostServiceImpl implements CrewPostService {
     }
 
     @Override
-    public CrewPostAndMembersWithDTO getCrewPostAndMembersWithAndHit(Long crewPostNo) {
-        increaseHit(crewPostRepository.findAllByCrewPostNo(crewPostNo));
-        return getCrewPostAndMembersWith(crewPostNo);
+    @Transactional(rollbackFor = Exception.class)
+    public CrewPostAndMembersDTO getCrewPostAndMembersAndHit(Long crewPostNo) {
+        crewPostRepository.findById(crewPostNo).ifPresent(this::increaseHit);
+        return getCrewPostAndMembers(crewPostNo);
     }
 
-    @Transactional
     public void increaseHit(CrewPost crewPost) {
+        System.out.println(crewPost.getCrewPostNo());
         crewPost.setHit(crewPost.getHit() + 1);
     }
 
     @Override
-    public CrewPostAndMembersWithDTO getCrewPostAndMembersWith(Long crewPostNo) {
-        CrewPostAndMembersWithDTO dto = new CrewPostAndMembersWithDTO();
-        dto.setCrewPostDTO(getCrewPost(crewPostNo));
-        dto.setMembersWithDTOList(getMembersWithList(crewPostNo));
+    public CrewPostAndMembersDTO getCrewPostAndMembers(Long crewPostNo) {
+        CrewPostAndMembersDTO dto = new CrewPostAndMembersDTO();
+        dto.setCrewPost(getCrewPost(crewPostNo));
+        dto.setTaggedMemberList(this.getMemberList(crewPostNo));
         return dto;
     }
 
@@ -89,22 +100,21 @@ public class CrewPostServiceImpl implements CrewPostService {
         return entityToDto(crewPostRepository.getById(crewPostNo));
     }
 
-    public List<MembersWithDTO> getMembersWithList(Long crewPostNo) {
-        return entityListToDtoList(membersWithRepository.findAllByCrewPost_CrewPostNo(crewPostNo));
+    public List<TaggedMemberDTO> getMemberList(Long crewPostNo) {
+        return entityListToDtoList(taggedMemberRepository
+                .findAllByCrewPost_CrewPostNo(crewPostNo));
     }
 
     @Override
-    public void saveCrewPost(CrewPostDTO dto, String membersWith) {
-        dto.setHit(0);
-        dto.setWDate(LocalDateTime.now());
-        CrewPost crewPost = crewPostRepository.save((CrewPost) dtoToEntity(dto));
-        saveWithMembers(membersWith, crewPost);
+    public String getWriterId(Long crewPostNo) {
+        return crewPostRepository.getWriterId(crewPostNo);
     }
 
     @Override
     @Transactional
     public void updateCrewPost(CrewPostDTO dto, Long crewPostNo) {
         CrewPost crewPost = crewPostRepository.getById(crewPostNo);
+
         crewPost.setCategory(dto.getCategory());
         crewPost.setTitle(dto.getTitle());
         crewPost.setContent(dto.getContent());
@@ -115,20 +125,35 @@ public class CrewPostServiceImpl implements CrewPostService {
         crewPostRepository.deleteById(crewPostNo);
     }
 
-    public void saveWithMembers(String membersWith, CrewPost crewPost) {
-        membersWith = membersWith.substring(1, membersWith.length() - 1);
-        if (membersWith.length() == 0) return;
+    @Override
+    @Transactional
+    public void deleteCrewPostByMemberId(String memberId) {
+        crewPostRepository.deleteAllByWriterId(memberId);
+    }
 
-        membersWith = membersWith.replace("\"", "");
-        String[] membersArray = membersWith.split(",");
+    @Override
+    @Transactional
+    public void deleteCrewPostByCrewNo(Long crewNo) {
+        crewPostRepository.deleteAllByCrewNo(crewNo);
+    }
 
-        for (String memberId : membersArray) {
-            MembersWithDTO dto = new MembersWithDTO();
+    /* Tagged Member */
+    public void addTaggedMembers(String taggedMembers, CrewPost crewPost) {
+        for (String memberId : this.getTaggedMembersArray(taggedMembers)) {
+            TaggedMemberDTO dto = new TaggedMemberDTO();
             dto.setMemberId(memberId);
             dto.setCrewPost(crewPost);
 
-            membersWithRepository.save((MembersWith) dtoToEntity(dto));
+            taggedMemberRepository.save((TaggedMember) dtoToEntity(dto));
         }
+    }
+
+    public String[] getTaggedMembersArray(String taggedMembers) {
+        taggedMembers = taggedMembers.substring(1, taggedMembers.length() - 1);
+        if (taggedMembers.length() == 0) return null;
+
+        taggedMembers = taggedMembers.replace("\"", "");
+        return taggedMembers.split(",");
     }
 
     @Override
@@ -136,31 +161,32 @@ public class CrewPostServiceImpl implements CrewPostService {
     public void saveMembers(Long crewPostNo, String memberId) {
         if (crewPostNo == 0) return;
 
-        MembersWithDTO dto = new MembersWithDTO();
+        TaggedMemberDTO dto = new TaggedMemberDTO();
         dto.setCrewPost(crewPostRepository.getById(crewPostNo));
         dto.setMemberId(memberId);
-        membersWithRepository.save((MembersWith) dtoToEntity(dto));
+        taggedMemberRepository.save((TaggedMember) dtoToEntity(dto));
     }
 
     @Override
-    public void deleteMemberInPost(Long membersWithNo) {
-        membersWithRepository.deleteById(membersWithNo);
+    public void deleteTaggedMember(TaggedMemberId taggedMemberId) {
+        taggedMemberRepository.deleteById(taggedMemberId);
     }
 
+    /* Utils */
     public Object dtoToEntity(CrewPostDTO dto) {
         return modelMapper.map(dto, CrewPost.class);
     }
 
-    public Object dtoToEntity(MembersWithDTO dto) {
-        return modelMapper.map(dto, MembersWith.class);
+    public Object dtoToEntity(TaggedMemberDTO dto) {
+        return modelMapper.map(dto, TaggedMember.class);
     }
 
     public CrewPostDTO entityToDto(CrewPost crewPost) {
         return modelMapper.map(crewPost, CrewPostDTO.class);
     }
 
-    public MembersWithDTO entityToDto(MembersWith crewMemberWith) {
-        return modelMapper.map(crewMemberWith, MembersWithDTO.class);
+    public TaggedMemberDTO entityToDto(TaggedMember crewMemberWith) {
+        return modelMapper.map(crewMemberWith, TaggedMemberDTO.class);
     }
 
     public Page<CrewPostDTO> entityPageToDtoPage(Page<CrewPost> crewPostPage) {
@@ -168,8 +194,8 @@ public class CrewPostServiceImpl implements CrewPostService {
         }.getType());
     }
 
-    public List<MembersWithDTO> entityListToDtoList(List<MembersWith> membersWithList) {
-        return modelMapper.map(membersWithList, new TypeToken<List<MembersWithDTO>>() {
+    public List<TaggedMemberDTO> entityListToDtoList(List<TaggedMember> taggedMemberList) {
+        return modelMapper.map(taggedMemberList, new TypeToken<List<TaggedMemberDTO>>() {
         }.getType());
     }
 

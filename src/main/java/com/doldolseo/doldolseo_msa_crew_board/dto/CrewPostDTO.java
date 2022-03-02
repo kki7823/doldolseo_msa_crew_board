@@ -21,5 +21,5 @@ public class CrewPostDTO {
     private String imageUUID;
     private LocalDateTime wDate;
     private int hit;
-    private String membersWith;
+    private String taggedMember;
 }

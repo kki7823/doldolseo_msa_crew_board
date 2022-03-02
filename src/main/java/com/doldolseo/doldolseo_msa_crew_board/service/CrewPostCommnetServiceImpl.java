@@ -3,6 +3,7 @@ package com.doldolseo.doldolseo_msa_crew_board.service;
 import com.doldolseo.doldolseo_msa_crew_board.domain.CrewPost;
 import com.doldolseo.doldolseo_msa_crew_board.domain.CrewPostComment;
 import com.doldolseo.doldolseo_msa_crew_board.dto.CrewPostCommentDTO;
+import com.doldolseo.doldolseo_msa_crew_board.dto.CrewPostCommentsDTO;
 import com.doldolseo.doldolseo_msa_crew_board.repository.CrewPostCommentRepository;
 import com.doldolseo.doldolseo_msa_crew_board.repository.CrewPostRepository;
 import org.modelmapper.ModelMapper;
@@ -24,12 +25,6 @@ public class CrewPostCommnetServiceImpl implements CrewPostCommentService {
     ModelMapper modelMapper;
 
     @Override
-    public List<CrewPostCommentDTO> getComments(Long crewPostNo) {
-        List<CrewPostComment> commentEntity = commentRepository.findAllByCrewPost_CrewPostNo(crewPostNo);
-        return entityListToDtoList(commentEntity);
-    }
-
-    @Override
     public CrewPostCommentDTO insertComment(CrewPostCommentDTO dto) {
         setWDate(dto);
         setCrewPost(dto);
@@ -44,6 +39,19 @@ public class CrewPostCommnetServiceImpl implements CrewPostCommentService {
     public void setCrewPost(CrewPostCommentDTO dto) {
         CrewPost crewPost = crewPostRepository.findAllByCrewPostNo(dto.getCrewPost().getCrewPostNo());
         dto.setCrewPost(crewPost);
+    }
+
+    @Override
+    public CrewPostCommentsDTO getComments(Long crewPostNo) {
+        List<CrewPostCommentDTO> comments = entityListToDtoList(commentRepository.findAllByCrewPost_CrewPostNo(crewPostNo));
+        Long numOfComments = commentRepository.countCrewPostCommentByCrewPost_CrewPostNo(crewPostNo);
+
+        return new CrewPostCommentsDTO(comments, numOfComments);
+    }
+
+    @Override
+    public String getCommentWriter(Long commentNo) {
+        return commentRepository.getWriterId(commentNo);
     }
 
     @Override

@@ -1,6 +1,5 @@
 package com.doldolseo.doldolseo_msa_crew_board.configuration;
 
-import com.doldolseo.doldolseo_msa_crew_board.utils.PagingParam;
 import com.doldolseo.doldolseo_msa_crew_board.utils.UploadCrewPostFileUtil;
 import org.modelmapper.ModelMapper;
 import org.springframework.context.annotation.Bean;

@@ -1,11 +1,14 @@
 package com.doldolseo.doldolseo_msa_crew_board.service;
 
 import com.doldolseo.doldolseo_msa_crew_board.dto.CrewPostCommentDTO;
+import com.doldolseo.doldolseo_msa_crew_board.dto.CrewPostCommentsDTO;
 
 import java.util.List;
 
 public interface CrewPostCommentService {
-    List<CrewPostCommentDTO> getComments(Long crewPostNo);
+    CrewPostCommentsDTO getComments(Long crewPostNo);
+
+    String getCommentWriter(Long commentNo);
 
     CrewPostCommentDTO insertComment(CrewPostCommentDTO dto);
 
