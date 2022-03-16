@@ -3,13 +3,12 @@ package com.doldolseo.doldolseo_msa_crew_board.controller;
 import com.doldolseo.doldolseo_msa_crew_board.dto.CrewPostCommentDTO;
 import com.doldolseo.doldolseo_msa_crew_board.dto.CrewPostCommentsDTO;
 import com.doldolseo.doldolseo_msa_crew_board.service.CrewPostCommentService;
+import com.doldolseo.doldolseo_msa_crew_board.service.CrewPostService;
 import com.doldolseo.doldolseo_msa_crew_board.utils.AuthorityUtil;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-
-import java.util.List;
 
 @RestController
 public class CrewPostCommentController {

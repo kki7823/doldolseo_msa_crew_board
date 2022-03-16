@@ -9,6 +9,7 @@ import com.doldolseo.doldolseo_msa_crew_board.dto.TaggedMemberDTO;
 import com.doldolseo.doldolseo_msa_crew_board.dto.CrewPostPageDTO;
 import com.doldolseo.doldolseo_msa_crew_board.repository.TaggedMemberRepository;
 import com.doldolseo.doldolseo_msa_crew_board.repository.CrewPostRepository;
+import com.doldolseo.doldolseo_msa_crew_board.utils.OtherRestUtil;
 import com.doldolseo.doldolseo_msa_crew_board.utils.PagingParam;
 import org.modelmapper.ModelMapper;
 import org.modelmapper.TypeToken;
@@ -17,7 +18,6 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-
 import java.time.LocalDateTime;
 import java.util.List;
 
@@ -29,6 +29,8 @@ public class CrewPostServiceImpl implements CrewPostService {
     TaggedMemberRepository taggedMemberRepository;
     @Autowired
     ModelMapper modelMapper;
+    @Autowired
+    OtherRestUtil restUtil;
 
     /* Crew Post */
     @Override
@@ -36,6 +38,13 @@ public class CrewPostServiceImpl implements CrewPostService {
         dto.setHit(0);
         dto.setWDate(LocalDateTime.now());
         CrewPost crewPost = crewPostRepository.save((CrewPost) dtoToEntity(dto));
+
+        /* crewRest : crewPoint 수정 */
+        Long crewNo = dto.getCrewNo();
+        String uri_updateCrewPoint
+                = "http://doldolseo-crew-rest.rest.svc.cluster.local:8080/doldolseo/crew/"+crewNo+"/point";
+
+        restUtil.crew_UpdatePoint(uri_updateCrewPoint, 20);
 
         if (taggedMembers.length() != 0)
             addTaggedMembers(taggedMembers, crewPost);

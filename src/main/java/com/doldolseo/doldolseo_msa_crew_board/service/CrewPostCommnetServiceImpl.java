@@ -6,12 +6,12 @@ import com.doldolseo.doldolseo_msa_crew_board.dto.CrewPostCommentDTO;
 import com.doldolseo.doldolseo_msa_crew_board.dto.CrewPostCommentsDTO;
 import com.doldolseo.doldolseo_msa_crew_board.repository.CrewPostCommentRepository;
 import com.doldolseo.doldolseo_msa_crew_board.repository.CrewPostRepository;
+import com.doldolseo.doldolseo_msa_crew_board.utils.OtherRestUtil;
 import org.modelmapper.ModelMapper;
 import org.modelmapper.TypeToken;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-
 import java.time.LocalDateTime;
 import java.util.List;
 
@@ -23,12 +23,21 @@ public class CrewPostCommnetServiceImpl implements CrewPostCommentService {
     CrewPostRepository crewPostRepository;
     @Autowired
     ModelMapper modelMapper;
+    @Autowired
+    OtherRestUtil restUtil;
 
     @Override
     public CrewPostCommentDTO insertComment(CrewPostCommentDTO dto) {
         setWDate(dto);
         setCrewPost(dto);
         CrewPostComment comment = commentRepository.save(dtoToEntity(dto));
+
+        /* crewRest : crewPoint 수정 */
+        Long crewNo = comment.getCrewPost().getCrewNo();
+        String uri_updateCrewPoint
+                = "http://doldolseo-crew-rest.rest.svc.cluster.local:8080/doldolseo/crew/"+crewNo+"/point";
+        restUtil.crew_UpdatePoint(uri_updateCrewPoint, 7);
+
         return entityToDto(comment);
     }
 
