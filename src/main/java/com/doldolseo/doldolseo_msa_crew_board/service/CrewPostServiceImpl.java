@@ -18,6 +18,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+
 import java.time.LocalDateTime;
 import java.util.List;
 
@@ -42,7 +43,7 @@ public class CrewPostServiceImpl implements CrewPostService {
         /* crewRest : crewPoint 수정 */
         Long crewNo = dto.getCrewNo();
         String uri_updateCrewPoint
-                = "http://doldolseo-crew-rest.rest.svc.cluster.local:8080/doldolseo/crew/"+crewNo+"/point";
+                = "http://doldolseo-crew-rest.rest.svc.cluster.local:8080/doldolseo/crew/" + crewNo + "/point";
 
         restUtil.crew_UpdatePoint(uri_updateCrewPoint, 20);
 
@@ -60,6 +61,8 @@ public class CrewPostServiceImpl implements CrewPostService {
             crewPostPage = getCrewPostPage(dtoIn.getCrewNo(), pageable);
         else if (dtoIn.getCategory() != 0)
             crewPostPage = getCrewPostPage(dtoIn.getCategory(), pageable);
+        else if (dtoIn.getWriterId().length() != 0 && dtoIn.getWriterId() != null)
+            crewPostPage = getCrewPostPage(dtoIn.getWriterId(), pageable);
         else
             crewPostPage = getCrewPostPage(pageable);
 
@@ -83,6 +86,10 @@ public class CrewPostServiceImpl implements CrewPostService {
 
     public Page<CrewPostDTO> getCrewPostPage(int category, Pageable pageable) {
         return entityPageToDtoPage(crewPostRepository.findAllByCategory(category, pageable));
+    }
+
+    public Page<CrewPostDTO> getCrewPostPage(String writerId, Pageable pageable) {
+        return entityPageToDtoPage(crewPostRepository.findAllByWriterId(writerId, pageable));
     }
 
     @Override

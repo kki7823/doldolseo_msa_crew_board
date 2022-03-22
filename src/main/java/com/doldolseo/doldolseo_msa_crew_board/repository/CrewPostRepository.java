@@ -10,7 +10,11 @@ import org.springframework.stereotype.Repository;
 @Repository
 public interface CrewPostRepository extends JpaRepository<CrewPost, Long> {
     Page<CrewPost> findAllByCrewNo(Long crewNo, Pageable pageable);
+
     Page<CrewPost> findAllByCategory(int category, Pageable pageable);
+
+    Page<CrewPost> findAllByWriterId(String writerId, Pageable pageable);
+
     CrewPost findAllByCrewPostNo(Long crewPostNo);
 
     @Query("select p.writerId from CrewPost p where p.crewPostNo = ?1")
